@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — GabosTours{% endblock %}
+
+{% block content %}
+
+<div class="row connectedSortable" id="dash-widgets">
+  <!-- Cada widget tiene un ID único para guardar el orden -->
+  <div class="col-lg-3 col-6 sortable-item" id="box-clientes">
+    <div class="small-box bg-info sortable-grab">
+      <div class="inner">
+        <h3 class="mb-1">Clientes</h3>
+        <p class="mb-0">Gestión de clientes</p>
+      </div>
+      <div class="icon"><i class="fas fa-users"></i></div>
+      <a href="{% url 'clientes:cliente_list' %}" class="small-box-footer">
+        Ir a clientes <i class="fas fa-arrow-circle-right"></i>
+      </a>
+    </div>
+  </div>
+
+  <div class="col-lg-3 col-6 sortable-item" id="box-proveedores">
+    <div class="small-box bg-success sortable-grab">
+      <div class="inner">
+        <h3 class="mb-1">Proveedores</h3>
+        <p class="mb-0">Catálogo de servicios</p>
+      </div>
+      <div class="icon"><i class="fas fa-briefcase"></i></div>
+      <a href="#" class="small-box-footer">
+        Ir a proveedores <i class="fas fa-arrow-circle-right"></i>
+      </a>
+    </div>
+  </div>
+
+  <div class="col-lg-3 col-6 sortable-item" id="box-destinos">
+    <div class="small-box bg-warning sortable-grab">
+      <div class="inner">
+        <h3 class="mb-1">Destinos</h3>
+        <p class="mb-0">Lugares y países</p>
+      </div>
+      <div class="icon"><i class="fas fa-map-marked-alt"></i></div>
+      <a href="#" class="small-box-footer">Próximamente <i class="fas fa-arrow-circle-right"></i></a>
+    </div>
+  </div>
+
+  <div class="col-lg-3 col-6 sortable-item" id="box-paquetes">
+    <div class="small-box bg-danger sortable-grab">
+      <div class="inner">
+        <h3 class="mb-1">Paquetes</h3>
+        <p class="mb-0">Combos de viaje</p>
+      </div>
+      <div class="icon"><i class="fas fa-suitcase-rolling"></i></div>
+      <a href="#" class="small-box-footer">Próximamente <i class="fas fa-arrow-circle-right"></i></a>
+    </div>
+  </div>
+</div>
+
+<div class="row mt-3">
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-header sortable-grab"><h3 class="card-title">Acciones rápidas</h3></div>
+      <div class="card-body">
+        <a href="{% url 'clientes:cliente_create' %}" class="btn btn-primary mr-2 mb-2">
+          <i class="fas fa-user-plus"></i> Nuevo cliente
+        </a>
+        <a href="#" class="btn btn-success mr-2 mb-2">
+          <i class="fas fa-plus-circle"></i> Nuevo proveedor
+        </a>
+        <a href="{% url 'clientes:cliente_list' %}" class="btn btn-outline-secondary mr-2 mb-2">
+          <i class="fas fa-list"></i> Ver clientes
+        </a>
+        <a href="#" class="btn btn-outline-secondary mb-2">
+          <i class="fas fa-list"></i> Ver proveedores
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-header sortable-grab"><h3 class="card-title">Bienvenido a GabosTours</h3></div>
+      <div class="card-body">
+        <p class="mb-0">Usa los accesos para gestionar <strong>Clientes</strong> y <strong>Proveedores</strong>.
+          Los módulos de <em>Destinos</em> y <em>Paquetes</em> llegarán después.</p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // --- Drag & Drop + persistencia ---
+  (function() {
+    const KEY = "dashboard-order-v1";
+    const $container = $("#dash-widgets");
+
+    // Habilitar sortable (AdminLTE recomienda jQuery UI)
+    $container.sortable({
+      placeholder: "sort-highlight",
+      connectWith: ".connectedSortable",
+      handle: ".sortable-grab",
+      forcePlaceholderSize: true,
+      zIndex: 999999
+    });
+
+    // Restaurar orden guardado
+    const saved = localStorage.getItem(KEY);
+    if (saved) {
+      const ids = saved.split(",");
+      ids.forEach(id => {
+        const $el = $("#" + id);
+        if ($el.length) $container.append($el);
+      });
+    }
+
+    // Guardar al terminar de arrastrar
+    $container.on("sortupdate", function() {
+      const order = $container.children(".sortable-item").map(function(){ return this.id; }).get();
+      localStorage.setItem(KEY, order.join(","));
+    });
+  })();
+</script>
+{% endblock %}
