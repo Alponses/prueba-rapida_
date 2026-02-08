@@ -1,0 +1,21 @@
+{% comment %}
+Reusable header for cards with optional "Agregar nuevo" button.
+Params:
+- title: heading text
+- add_url: optional href for the add button
+- add_label: button text (default "Agregar nuevo")
+- can_add: boolean to show/hide button (default True)
+- btn_class: CSS classes for button (default "btn btn-primary")
+- btn_modal_title: optional data-title (for modal triggers)
+- btn_title: optional title attribute
+{% endcomment %}
+{% with btn_class=btn_class|default:"btn btn-primary" %}
+<div class="d-flex justify-content-between align-items-center">
+  <h3 class="card-title">{{ title }}</h3>
+  {% if add_url and can_add|default_if_none:True %}
+    <a href="{{ add_url }}" class="{{ btn_class }}" {% if btn_modal_title %}data-title="{{ btn_modal_title }}"{% endif %} {% if btn_title %}title="{{ btn_title }}"{% endif %}>
+      <i class="fas fa-plus"></i> {{ add_label|default:"Agregar nuevo" }}
+    </a>
+  {% endif %}
+</div>
+{% endwith %}

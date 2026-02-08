@@ -22,6 +22,25 @@
     /* Para indicar que los widgets se pueden arrastrar */
     .sortable-grab { cursor: move; }
     .sort-highlight { background: rgba(0,0,0,.05); border: 1px dashed #999; min-height: 60px; }
+    .module-subnav {
+      display: flex;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      gap: .25rem;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: thin;
+    }
+    .module-subnav .nav-link {
+      white-space: nowrap;
+      color: #6c757d;
+      font-weight: 600;
+      border-radius: .35rem;
+      padding: .35rem .75rem;
+    }
+    .module-subnav .nav-link.active {
+      color: #1f2d3d;
+      background: #e9ecef;
+    }
   </style>
 
   {% block head_extra %}{% endblock %}
@@ -36,26 +55,43 @@
         <a class="nav-link" data-widget="pushmenu" href="#" role="button"><i class="fas fa-bars"></i></a>
       </li>
       <li class="nav-item d-none d-sm-inline-block">
-        <a href="{% url 'home' %}" class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}">Inicio</a>
+        <a href="{% url 'index' %}" class="nav-link {% if request.resolver_match.url_name == 'index' %}active{% endif %}">Inicio</a>
       </li>
-      <li class="nav-item d-none d-sm-inline-block">
-        <a href="{% url 'clientes:cliente_list' %}" class="nav-link {% if request.resolver_match.url_name == 'cliente_list' %}active{% endif %}">Clientes</a>
+      <li class="nav-item dropdown d-none d-sm-inline-block">
+        <a class="nav-link dropdown-toggle {% if request.resolver_match.namespace == 'destinos' or request.resolver_match.namespace == 'proveedores' or request.resolver_match.namespace == 'productos' or request.resolver_match.namespace == 'paquetes' or request.resolver_match.namespace == 'metodopago' %}active{% endif %}" href="#" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+          Catálogo
+        </a>
+        <div class="dropdown-menu">  
+          <a href="{% url 'productos:producto_list' %}" class="dropdown-item">Productos</a>
+          <a href="{% url 'proveedores:proveedor_list' %}" class="dropdown-item">Proveedores</a>
+          <a href="{% url 'destinos:destino_list' %}" class="dropdown-item">Destinos</a>
+          <a href="{% url 'paquetes:paquete_list' %}" class="dropdown-item">Paquetes</a>
+          <a href="{% url 'metodopago:metodopago_list' %}" class="dropdown-item">Métodos de pago</a>
+        </div>
       </li>
-      <li class="nav-item d-none d-sm-inline-block">
-        <a href="#" class="nav-link {% if request.resolver_match.url_name == 'destino_list' %}active{% endif %}">Destinos</a>
+      <li class="nav-item dropdown d-none d-sm-inline-block">
+        <a class="nav-link dropdown-toggle {% if request.resolver_match.namespace == 'reservas' %}active{% endif %}" href="#" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+          Ventas
+        </a>
+        <div class="dropdown-menu">
+          <a href="{% url 'reservas:reserva_list' %}" class="dropdown-item">Reservas</a>
+        </div>
       </li>
-      <li class="nav-item d-none d-sm-inline-block">
-        <a href="#" class="nav-link {% if request.resolver_match.url_name == 'proveedor_list' %}active{% endif %}">Proveedores</a>
-      </li>
-      <li class="nav-item d-none d-sm-inline-block">
-        <a href="#" class="nav-link {% if request.resolver_match.url_name == 'paquete_list' %}active{% endif %}">Paquetes</a>
+      <li class="nav-item dropdown d-none d-sm-inline-block">
+        <a class="nav-link dropdown-toggle {% if request.resolver_match.namespace == 'clientes' or request.resolver_match.namespace == 'interacciones' %}active{% endif %}" href="#" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+          Clientes y CRM
+        </a>
+        <div class="dropdown-menu">
+          <a href="{% url 'clientes:cliente_list' %}" class="dropdown-item">Clientes</a>
+          <a href="{% url 'interacciones:interaccion_list' %}" class="dropdown-item">Interacciones</a>
+        </div>
       </li>
     </ul>
   </nav>
 
   <!-- Sidebar -->
   <aside class="main-sidebar sidebar-dark-primary elevation-4">
-    <a href="{% url 'home' %}" class="brand-link">
+    <a href="{% url 'index' %}" class="brand-link">
       <img src="{% static 'img/AdminLTELogo.png' %}" alt="Logo" class="brand-image img-circle elevation-3" style="opacity:.8">
       <span class="brand-text font-weight-light">GabosTours</span>
     </a>
@@ -64,38 +100,73 @@
       <nav class="mt-2">
         <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu">
           <li class="nav-item">
-            <a href="{% url 'home' %}" class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}">
+            <a href="{% url 'index' %}" class="nav-link {% if request.resolver_match.url_name == 'index' %}active{% endif %}">
               <i class="nav-icon fas fa-tachometer-alt"></i><p>Dashboard</p>
             </a>
           </li>
-          <li class="nav-item">
-            <a href="{% url 'clientes:cliente_list' %}" class="nav-link {% if request.resolver_match.url_name == 'cliente_list' %}active{% endif %}">
-              <i class="nav-icon fas fa-users"></i><p>Clientes</p>
-            </a>
-          </li>
-          <li class="nav-item has-treeview">
-            <a href="#" class="nav-link">
+          {% with ns=request.resolver_match.namespace %}
+          <li class="nav-item has-treeview {% if ns == 'destinos' or ns == 'proveedores' or ns == 'productos' or ns == 'paquetes' or ns == 'metodopago' %}menu-open{% endif %}">
+            <a href="#" class="nav-link {% if ns == 'destinos' or ns == 'proveedores' or ns == 'productos' or ns == 'paquetes' or ns == 'metodopago' %}active{% endif %}">
               <i class="nav-icon fas fa-briefcase"></i><p>Catálogo<i class="right fas fa-angle-left"></i></p>
             </a>
             <ul class="nav nav-treeview">
               <li class="nav-item">
-                <a href="#" class="nav-link {% if request.resolver_match.url_name == 'destino_list' %}active{% endif %}">
+                <a href="{% url 'destinos:destino_list' %}" class="nav-link {% if request.resolver_match.namespace == 'destinos' %}active{% endif %}">
                   <i class="far fa-circle nav-icon"></i><p>Destinos</p>
                 </a>
               </li>
               <li class="nav-item">
-                <a href="#" class="nav-link {% if request.resolver_match.url_name == 'proveedor_list' %}active{% endif %}">
+                <a href="{% url 'proveedores:proveedor_list' %}" class="nav-link {% if request.resolver_match.namespace == 'proveedores' %}active{% endif %}">
                   <i class="far fa-circle nav-icon"></i><p>Proveedores</p>
                 </a>
               </li>
               <li class="nav-item">
-                <a href="#" class="nav-link {% if request.resolver_match.url_name == 'paquete_list' %}active{% endif %}">
+                <a href="{% url 'productos:producto_list' %}" class="nav-link {% if request.resolver_match.namespace == 'productos' %}active{% endif %}">
+                  <i class="far fa-circle nav-icon"></i><p>Productos</p>
+                </a>
+              </li>
+              <li class="nav-item">
+                <a href="{% url 'paquetes:paquete_list' %}" class="nav-link {% if ns == 'paquetes' %}active{% endif %}">
                   <i class="far fa-circle nav-icon"></i><p>Paquetes</p>
                 </a>
               </li>
-              <!-- Agregar más entradas de catálogo cuando estén -->
+              <li class="nav-item">
+                <a href="{% url 'metodopago:metodopago_list' %}" class="nav-link {% if request.resolver_match.namespace == 'metodopago' %}active{% endif %}">
+                  <i class="far fa-circle nav-icon"></i><p>Métodos de pago</p>
+                </a>
+              </li>
             </ul>
           </li>
+          <li class="nav-item has-treeview {% if ns == 'reservas' %}menu-open{% endif %}">
+            <a href="#" class="nav-link {% if ns == 'reservas' %}active{% endif %}">
+              <i class="nav-icon fas fa-shopping-cart"></i><p>Ventas<i class="right fas fa-angle-left"></i></p>
+            </a>
+            <ul class="nav nav-treeview">
+              <li class="nav-item">
+                <a href="{% url 'reservas:reserva_list' %}" class="nav-link {% if ns == 'reservas' %}active{% endif %}">
+                  <i class="far fa-circle nav-icon"></i><p>Reservas</p>
+                </a>
+              </li>
+            </ul>
+          </li>
+          <li class="nav-item has-treeview {% if ns == 'clientes' or ns == 'interacciones' %}menu-open{% endif %}">
+            <a href="#" class="nav-link {% if ns == 'clientes' or ns == 'interacciones' %}active{% endif %}">
+              <i class="nav-icon fas fa-users"></i><p>Clientes y CRM<i class="right fas fa-angle-left"></i></p>
+            </a>
+            <ul class="nav nav-treeview">
+              <li class="nav-item">
+                <a href="{% url 'clientes:cliente_list' %}" class="nav-link {% if ns == 'clientes' %}active{% endif %}">
+                  <i class="far fa-circle nav-icon"></i><p>Clientes</p>
+                </a>
+              </li>
+              <li class="nav-item">
+                <a href="{% url 'interacciones:interaccion_list' %}" class="nav-link {% if ns == 'interacciones' %}active{% endif %}">
+                  <i class="far fa-circle nav-icon"></i><p>Interacciones</p>
+                </a>
+              </li>
+            </ul>
+          </li>
+          {% endwith %}
         </ul>
       </nav>
     </div>
@@ -103,6 +174,42 @@
 
   <!-- Contenido -->
   <div class="content-wrapper">
+    {% with ns=request.resolver_match.namespace %}
+    {% if ns == 'productos' or ns == 'proveedores' or ns == 'destinos' or ns == 'paquetes' or ns == 'metodopago' %}
+    <section class="content-header py-2 border-bottom bg-white">
+      <div class="container-fluid">
+        <ul class="nav module-subnav">
+          <li class="nav-item"><a href="{% url 'productos:producto_list' %}" class="nav-link {% if ns == 'productos' %}active{% endif %}">Productos</a></li>
+          <li class="nav-item"><a href="{% url 'proveedores:proveedor_list' %}" class="nav-link {% if ns == 'proveedores' %}active{% endif %}">Proveedores</a></li>
+          <li class="nav-item"><a href="{% url 'destinos:destino_list' %}" class="nav-link {% if ns == 'destinos' %}active{% endif %}">Destinos</a></li>
+          <li class="nav-item"><a href="{% url 'paquetes:paquete_list' %}" class="nav-link {% if ns == 'paquetes' %}active{% endif %}">Paquetes</a></li>
+          <li class="nav-item"><a href="{% url 'metodopago:metodopago_list' %}" class="nav-link {% if ns == 'metodopago' %}active{% endif %}">Métodos de pago</a></li>
+        </ul>
+      </div>
+    </section>
+    {% elif ns == 'reservas' %}
+    <section class="content-header py-2 border-bottom bg-white">
+      <div class="container-fluid">
+        <ul class="nav module-subnav">
+          <li class="nav-item"><a href="{% url 'reservas:reserva_list' %}" class="nav-link {% if ns == 'reservas' %}active{% endif %}">Reservas</a></li>
+          <li class="nav-item"><a href="{% url 'clientes:cliente_list' %}" class="nav-link">Clientes</a></li>
+          <li class="nav-item"><a href="{% url 'paquetes:paquete_list' %}" class="nav-link">Paquetes</a></li>
+          <li class="nav-item"><a href="{% url 'metodopago:metodopago_list' %}" class="nav-link">Métodos de pago</a></li>
+        </ul>
+      </div>
+    </section>
+    {% elif ns == 'clientes' or ns == 'interacciones' %}
+    <section class="content-header py-2 border-bottom bg-white">
+      <div class="container-fluid">
+        <ul class="nav module-subnav">
+          <li class="nav-item"><a href="{% url 'clientes:cliente_list' %}" class="nav-link {% if ns == 'clientes' %}active{% endif %}">Clientes</a></li>
+          <li class="nav-item"><a href="{% url 'interacciones:interaccion_list' %}" class="nav-link {% if ns == 'interacciones' %}active{% endif %}">Interacciones</a></li>
+          <li class="nav-item"><a href="{% url 'reservas:reserva_list' %}" class="nav-link">Reservas</a></li>
+        </ul>
+      </div>
+    </section>
+    {% endif %}
+    {% endwith %}
     <section class="content pt-3">
       <div class="container-fluid">
         {% block content %}{% endblock %}

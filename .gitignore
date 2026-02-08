@@ -1,1 +1,18 @@
-/win_env
+# Python
+__pycache__/
+*.py[cod]
+
+# Entornos
+venv/
+env/
+
+# Django/SQLite
+*.sqlite3
+app/db.sqlite3
+
+# Archivos temporales/OS
+.DS_Store
+Thumbs.db
+
+# Otros
+*.log

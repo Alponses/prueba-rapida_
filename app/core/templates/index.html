@@ -25,7 +25,7 @@
         <p class="mb-0">Catálogo de servicios</p>
       </div>
       <div class="icon"><i class="fas fa-briefcase"></i></div>
-      <a href="#" class="small-box-footer">
+      <a href="{% url 'proveedores:proveedor_list' %}" class="small-box-footer">
         Ir a proveedores <i class="fas fa-arrow-circle-right"></i>
       </a>
     </div>
@@ -38,7 +38,7 @@
         <p class="mb-0">Lugares y países</p>
       </div>
       <div class="icon"><i class="fas fa-map-marked-alt"></i></div>
-      <a href="#" class="small-box-footer">Próximamente <i class="fas fa-arrow-circle-right"></i></a>
+      <a href="{% url 'destinos:destino_list' %}" class="small-box-footer">Ir a destinos <i class="fas fa-arrow-circle-right"></i></a>
     </div>
   </div>
 
@@ -49,7 +49,7 @@
         <p class="mb-0">Combos de viaje</p>
       </div>
       <div class="icon"><i class="fas fa-suitcase-rolling"></i></div>
-      <a href="#" class="small-box-footer">Próximamente <i class="fas fa-arrow-circle-right"></i></a>
+      <a href="{% url 'paquetes:paquete_list' %}" class="small-box-footer">Ir a paquetes <i class="fas fa-arrow-circle-right"></i></a>
     </div>
   </div>
 </div>
@@ -62,13 +62,13 @@
         <a href="{% url 'clientes:cliente_create' %}" class="btn btn-primary mr-2 mb-2">
           <i class="fas fa-user-plus"></i> Nuevo cliente
         </a>
-        <a href="#" class="btn btn-success mr-2 mb-2">
+        <a href="{% url 'proveedores:proveedor_create' %}" class="btn btn-success mr-2 mb-2">
           <i class="fas fa-plus-circle"></i> Nuevo proveedor
         </a>
         <a href="{% url 'clientes:cliente_list' %}" class="btn btn-outline-secondary mr-2 mb-2">
           <i class="fas fa-list"></i> Ver clientes
         </a>
-        <a href="#" class="btn btn-outline-secondary mb-2">
+        <a href="{% url 'proveedores:proveedor_list' %}" class="btn btn-outline-secondary mb-2">
           <i class="fas fa-list"></i> Ver proveedores
         </a>
       </div>

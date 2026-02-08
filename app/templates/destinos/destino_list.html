@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}Destinos — GabosTours{% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="card-header">
+    <div class="d-flex justify-content-between align-items-center">
+      <h3 class="card-title">Destinos</h3>
+      {% url 'destinos:destino_create' as destino_create_url %}
+      {% include "includes/card_header.html" with title="Destinos" add_url=destino_create_url can_add=perms.core.add_destino %}
+    </div>
+  </div>
+
+  <div class="card-body">
+    <form method="get" class="mb-4">
+      <div class="input-group">
+        <input type="text" name="q" class="form-control" placeholder="Buscar por nombre, país o descripción..." value="{{ request.GET.q }}">
+        <button type="submit" class="btn btn-outline-secondary">
+          <i class="fas fa-search"></i> Buscar
+        </button>
+      </div>
+    </form>
+
+    <table id="tabla-destinos" class="table table-striped table-bordered">
+      <thead>
+        <tr>
+          <th>Destino</th>
+          <th>País</th>
+          <th>Descripción</th>
+          <th style="width:120px;">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for d in destinos %}
+        <tr>
+          <td>{{ d.nombre }}</td>
+          <td>{{ d.pais }}</td>
+          <td>{{ d.descripcion|default:"—" }}</td>
+          <td>
+            {% if perms.core.change_destino %}
+              <a href="{% url 'destinos:destino_update' d.pk %}" class="btn btn-sm btn-info" title="Editar">
+                <i class="fas fa-edit"></i>
+              </a>
+            {% endif %}
+            {% if perms.core.delete_destino %}
+              <a href="{% url 'destinos:destino_delete' d.pk %}" class="btn btn-sm btn-danger" title="Eliminar">
+                <i class="fas fa-trash"></i>
+              </a>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    {% if is_paginated %}
+    <nav aria-label="Paginación">
+      <ul class="pagination justify-content-center">
+        {% if page_obj.has_previous %}
+        <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">Anterior</a></li>
+        {% endif %}
+        <li class="page-item active"><span class="page-link">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span></li>
+        {% if page_obj.has_next %}
+        <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">Siguiente</a></li>
+        {% endif %}
+      </ul>
+    </nav>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  $(function () {
+    $('#tabla-destinos').DataTable({
+      language: {
+        url: 'https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json',
+        emptyTable: 'Sin destinos registrados.'
+      },
+      pageLength: 10,
+      lengthChange: false
+    });
+  });
+</script>
+{% endblock %}

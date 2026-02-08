@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+
+{% block title %}
+  {{ page_title|default:"Nuevo registro" }} — GabosTours
+{% endblock %}
+
+{% block content %}
+{% url "index" as home_url %}
+{% with heading=page_title|default:"Nuevo registro" %}
+<div class="card">
+  <div class="card-header">
+    {% with ns=request.resolver_match.namespace %}
+      {% if ns == "clientes" %}
+        {% url 'clientes:cliente_create' as add_url %}
+        {% include "includes/card_header.html" with title=heading add_url=add_url can_add=perms.core.add_cliente btn_class="btn btn-primary btn-sm" %}
+      {% elif ns == "paquetes" %}
+        {% url 'paquetes:paquete_create' as add_url %}
+        {% include "includes/card_header.html" with title=heading add_url=add_url can_add=perms.core.add_paquete btn_class="btn btn-primary btn-sm" %}
+      {% elif ns == "productos" %}
+        {% url 'productos:producto_create' as add_url %}
+        {% include "includes/card_header.html" with title=heading add_url=add_url can_add=perms.core.add_producto btn_class="btn btn-primary btn-sm" %}
+      {% elif ns == "proveedores" %}
+        {% url 'proveedores:proveedor_create' as add_url %}
+        {% include "includes/card_header.html" with title=heading add_url=add_url can_add=perms.core.add_proveedor btn_class="btn btn-primary btn-sm" %}
+      {% elif ns == "destinos" %}
+        {% url 'destinos:destino_create' as add_url %}
+        {% include "includes/card_header.html" with title=heading add_url=add_url can_add=perms.core.add_destino btn_class="btn btn-primary btn-sm" %}
+      {% elif ns == "reservas" %}
+        {% url 'reservas:reserva_create' as add_url %}
+        {% include "includes/card_header.html" with title=heading add_url=add_url can_add=perms.core.add_reserva btn_class="btn btn-primary btn-sm" %}
+      {% elif ns == "interacciones" %}
+        {% url 'interacciones:interaccion_create' as add_url %}
+        {% include "includes/card_header.html" with title=heading add_url=add_url can_add=perms.core.add_interaccion btn_class="btn btn-primary btn-sm" %}
+      {% elif ns == "metodopago" %}
+        {% url 'metodopago:metodopago_create' as add_url %}
+        {% include "includes/card_header.html" with title=heading add_url=add_url can_add=perms.core.add_metodopago btn_class="btn btn-primary btn-sm" %}
+      {% else %}
+        <div class="d-flex justify-content-between align-items-center">
+          <h3 class="card-title">{{ heading }}</h3>
+        </div>
+      {% endif %}
+    {% endwith %}
+  </div>
+
+  <div class="card-body">
+    <form method="post" novalidate>
+      {% csrf_token %}
+
+      {% if form.non_field_errors %}
+        <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+      {% endif %}
+
+      {% for field in form %}
+        {% if field.name == "productos" %}
+          <div class="form-group">
+            <label>{{ field.label }}:</label>
+            <div class="row">
+              {% for checkbox in field %}
+                <div class="col-md-4 col-sm-6 mb-2">
+                  <div class="form-check">
+                    {{ checkbox.tag }}
+                    <label class="form-check-label" for="{{ checkbox.id_for_label }}">{{ checkbox.choice_label }}</label>
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+            {% if field.help_text %}<small class="form-text text-muted">{{ field.help_text }}</small>{% endif %}
+            {% for error in field.errors %}<div class="invalid-feedback d-block">{{ error|striptags }}</div>{% endfor %}
+          </div>
+        {% elif field.field.widget.input_type == "checkbox" %}
+          <div class="form-group form-check">
+            {{ field }}
+            <label class="form-check-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+            {% if field.help_text %}<small class="form-text text-muted">{{ field.help_text }}</small>{% endif %}
+            {% for error in field.errors %}<div class="invalid-feedback d-block">{{ error|striptags }}</div>{% endfor %}
+          </div>
+        {% else %}
+          <div class="form-group">
+            <label for="{{ field.id_for_label }}">{{ field.label }}:</label>
+            {{ field }}
+            {% if field.help_text %}<small class="form-text text-muted">{{ field.help_text }}</small>{% endif %}
+            {% for error in field.errors %}<div class="invalid-feedback d-block">{{ error|striptags }}</div>{% endfor %}
+          </div>
+        {% endif %}
+      {% endfor %}
+
+      <button type="submit" class="btn btn-primary">
+        <i class="fas fa-save"></i> {{ submit_label|default:"Guardar" }}
+      </button>
+
+      <a href="{{ cancel_url|default:home_url }}" class="btn btn-secondary">Cancelar</a>
+    </form>
+  </div>
+</div>
+{% endwith %}
+{% endblock %}
+
+{% block scripts %}
+{{ block.super }}
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const addValue = '__add__';
+    const addLabel = 'Agregar más...';
+    const selectElements = document.querySelectorAll('select[name="metodo_pago"]');
+
+    selectElements.forEach(function (select) {
+      const hasAdd = Array.from(select.options).some(function (opt) {
+        return opt.value === addValue;
+      });
+
+      if (!hasAdd) {
+        const option = document.createElement('option');
+        option.value = addValue;
+        option.textContent = addLabel;
+        select.appendChild(option);
+      }
+
+      select.addEventListener('change', function () {
+        if (this.value === addValue) {
+          window.location.href = "{% url 'metodopago:metodopago_create' %}";
+        }
+      });
+    });
+  });
+</script>
+{% endblock %}
