@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}{{ page_title }} — GabosTours{% endblock %}
+{% block content %}
+<div class="card">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <h3 class="card-title mb-0">{{ page_title }}</h3>
+    <a href="{{ cancel_url }}" class="btn btn-sm btn-secondary">Volver a la lista</a>
+  </div>
+  <div class="card-body">
+    <form method="post" novalidate>
+      {% csrf_token %}
+
+      {% if form.non_field_errors %}
+        <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+      {% endif %}
+
+      <div class="form-group">
+        <label for="{{ form.name.id_for_label }}">Nombre del rol</label>
+        {{ form.name }}
+        {% for error in form.name.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+      </div>
+
+      <ul class="nav nav-tabs" role="tablist">
+        {% for key, tab in perm_tabs.items %}
+          <li class="nav-item">
+            <a class="nav-link {% if forloop.first %}active{% endif %}" data-toggle="tab" href="#tab-{{ key }}" role="tab">
+              {{ tab.label }}
+            </a>
+          </li>
+        {% endfor %}
+      </ul>
+
+      <div class="tab-content border border-top-0 p-3">
+        {% for key, tab in perm_tabs.items %}
+          <div class="tab-pane fade {% if forloop.first %}show active{% endif %}" id="tab-{{ key }}" role="tabpanel">
+            <div class="mb-3">
+              <button type="button" class="btn btn-sm btn-outline-secondary" onclick="selectAllInTab('tab-{{ key }}', true)">Seleccionar todo</button>
+              <button type="button" class="btn btn-sm btn-outline-secondary" onclick="selectAllInTab('tab-{{ key }}', false)">Quitar todo</button>
+            </div>
+
+            {% for perm in tab.perms %}
+              <div class="form-check mb-1">
+                <input class="form-check-input" type="checkbox" name="permissions" id="perm-{{ perm.id }}" value="{{ perm.id }}"
+                  {% if perm.id in selected_perm_ids %}checked{% endif %}>
+                <label class="form-check-label" for="perm-{{ perm.id }}">
+                  {{ perm.name }} <small class="text-muted">({{ perm.codename }})</small>
+                </label>
+              </div>
+            {% empty %}
+              <p class="text-muted mb-0">No hay permisos en este módulo.</p>
+            {% endfor %}
+          </div>
+        {% endfor %}
+      </div>
+      {% if form.permissions.errors %}
+        <div class="alert alert-danger mt-2">
+          {% for error in form.permissions.errors %}{{ error }}{% if not forloop.last %}<br>{% endif %}{% endfor %}
+        </div>
+      {% endif %}
+
+      <div class="mt-3 d-flex gap-2">
+        <button type="submit" class="btn btn-primary">
+          <i class="fas fa-save"></i> {{ submit_label }}
+        </button>
+        <a class="btn btn-secondary" href="{{ cancel_url }}">Cancelar</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function selectAllInTab(tabId, value){
+  const tab = document.getElementById(tabId);
+  if(!tab) return;
+  tab.querySelectorAll('input[type=\"checkbox\"][name=\"permissions\"]').forEach(cb => cb.checked = value);
+}
+</script>
+{% endblock %}

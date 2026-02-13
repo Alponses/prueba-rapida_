@@ -23,6 +23,25 @@ from .models import (
     Reserva,
 )
 
+from django.contrib.auth.models import Group, Permission
+from django.contrib.auth import get_user_model
+
+
+class RolForm(forms.ModelForm):
+    permissions = forms.ModelMultipleChoiceField(
+        queryset=Permission.objects.select_related("content_type").all(),
+        required=False,
+    )
+
+    class Meta:
+        model = Group
+        fields = ("name", "permissions")
+        labels = {"name": "Nombre"}
+        widgets = {
+            "name": forms.TextInput(attrs={"class": "form-control"}),
+        }
+
+
 class ClienteForm(forms.ModelForm):
     class Meta:
         model = Cliente
@@ -196,3 +215,64 @@ class InteraccionForm(forms.ModelForm):
             "tipo": Select(attrs={"class": "form-control"}),
             "notas": Textarea(attrs={"class": "form-control", "rows": 3}),
         }
+
+
+# core/forms.py (continuación)
+User = get_user_model()
+
+class EmpleadoCreateForm(forms.ModelForm):
+    password1 = forms.CharField(label="Contraseña", widget=forms.PasswordInput)
+    password2 = forms.CharField(label="Confirmar contraseña", widget=forms.PasswordInput)
+
+    class Meta:
+        model = User
+        # Ajusta campos si tu Empleado usa otros nombres (ej. nombre/telefono)
+        fields = ["email", "is_active", "is_staff", "groups"]
+        labels = {"email": "Correo", "groups": "Roles"}
+
+        widgets = {
+            "groups": forms.CheckboxSelectMultiple,
+        }
+
+    def clean(self):
+        cleaned = super().clean()
+        p1, p2 = cleaned.get("password1"), cleaned.get("password2")
+        if p1 and p2 and p1 != p2:
+            self.add_error("password2", "Las contraseñas no coinciden.")
+        return cleaned
+
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        user.set_password(self.cleaned_data["password1"])
+        if commit:
+            user.save()
+            self.save_m2m()
+        return user
+
+
+class EmpleadoUpdateForm(forms.ModelForm):
+    password1 = forms.CharField(label="Nueva contraseña", widget=forms.PasswordInput, required=False)
+    password2 = forms.CharField(label="Confirmar nueva contraseña", widget=forms.PasswordInput, required=False)
+
+    class Meta:
+        model = User
+        fields = ["email", "is_active", "is_staff", "groups"]
+        labels = {"email": "Correo", "groups": "Roles"}
+        widgets = {"groups": forms.CheckboxSelectMultiple}
+
+    def clean(self):
+        cleaned = super().clean()
+        p1, p2 = cleaned.get("password1"), cleaned.get("password2")
+        if (p1 or p2) and p1 != p2:
+            self.add_error("password2", "Las contraseñas no coinciden.")
+        return cleaned
+
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        p1 = self.cleaned_data.get("password1")
+        if p1:
+            user.set_password(p1)
+        if commit:
+            user.save()
+            self.save_m2m()
+        return user

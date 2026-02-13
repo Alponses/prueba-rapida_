@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Roles — GabosTours{% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="card-header">
+    {% url 'roles:rol_create' as add_url %}
+    {% include "includes/card_header.html" with title="Roles" add_url=add_url can_add=perms.auth.add_group btn_class="btn btn-primary" %}
+  </div>
+  <div class="card-body">
+    <table class="table table-striped table-bordered">
+      <thead>
+        <tr>
+          <th>Nombre</th>
+          <th>Permisos</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in roles %}
+        <tr>
+          <td>{{ r.name }}</td>
+          <td>{{ r.permissions.count }}</td>
+          <td>
+            {% if perms.auth.change_group %}
+              <a class="btn btn-sm btn-info" href="{% url 'roles:rol_update' r.pk %}"><i class="fas fa-edit"></i></a>
+            {% endif %}
+            {% if perms.auth.delete_group %}
+              <a class="btn btn-sm btn-danger" href="{% url 'roles:rol_delete' r.pk %}"><i class="fas fa-trash"></i></a>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+

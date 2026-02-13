@@ -1,33 +1,18 @@
+# core/mixins.py
+from django.contrib.auth.mixins import AccessMixin
 from django.shortcuts import redirect
-from django.urls import reverse
 
-class PermissionRedirectMixin:
+
+class PermissionRedirectMixin(AccessMixin):
     """
-    - Si no está autenticado -> login
-    - Si es superuser -> pasa
-    - Si tiene required_perm -> pasa
-    - Si no -> redirect a /403/
+    - Si no está logueado -> redirect a 'login'
+    - Si está logueado pero NO tiene permiso -> redirect a 'access_denied'
     """
     required_perm = None
-    denied_url_name = "access_denied"  # ruta global del proyecto
-
-    def has_permission(self):
-        user = self.request.user
-        if not user.is_authenticated:
-            return False
-        if getattr(user, "is_superuser", False):
-            return True
-        if not self.required_perm:
-            return True
-        return user.has_perm(self.required_perm)
-
-    def handle_no_permission(self):
-        # aquí puedes mandar a 404 si quieres ocultar módulos
-        return redirect(self.denied_url_name)
 
     def dispatch(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
             return redirect("login")
-        if not self.has_permission():
-            return self.handle_no_permission()
+        if self.required_perm and not request.user.has_perm(self.required_perm):
+            return redirect("access_denied")
         return super().dispatch(request, *args, **kwargs)

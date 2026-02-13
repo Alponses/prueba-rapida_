@@ -1,35 +1,45 @@
+# core/views.py
+from collections import OrderedDict
+
 from django.contrib import messages
+from django.contrib.auth import get_user_model
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.models import Group, Permission
 from django.db.models import Q
+from django.shortcuts import redirect
 from django.urls import reverse_lazy
+from django.views import View
 from django.views.generic import CreateView, DeleteView, ListView, TemplateView, UpdateView
-from django.views.generic import TemplateView
-from core.mixins import PermissionRedirectMixin
-from .models import Cliente, Destino, Interaccion, MetodoPago, Paquete, Producto, Proveedor, Reserva
 
-from .forms import (
-    ClienteForm,
-    DestinoForm,
-    InteraccionForm,
-    MetodoPagoForm,
-    PaqueteForm,
-    ProductoForm,
-    ProveedorForm,
-    ReservaForm,
-)
+from .mixins import PermissionRedirectMixin
 from .models import (
-    Cliente,
-    Destino,
-    Interaccion,
-    MetodoPago,
-    Paquete,
-    Producto,
-    Proveedor,
-    Reserva,
+    Cliente, Destino, Interaccion, MetodoPago, Paquete, Producto, Proveedor, Reserva
+)
+from .forms import (
+    ClienteForm, DestinoForm, InteraccionForm, MetodoPagoForm,
+    PaqueteForm, ProductoForm, ProveedorForm, ReservaForm,
+    RolForm, EmpleadoCreateForm, EmpleadoUpdateForm
 )
 
 
-class IndexView(TemplateView):
-    template_name = 'index.html'
+class RootRedirectView(View):
+    def get(self, request, *args, **kwargs):
+        if request.user.is_authenticated:
+            return redirect("home")
+        return redirect("login")
+
+
+
+class IndexView(LoginRequiredMixin, TemplateView):
+    template_name = "index.html"
+
+
+class AccessDeniedView(TemplateView):
+    template_name = "errors/403.html"
+
+
+
+
 
 
 
@@ -571,27 +581,25 @@ class ReservaCreateView(PermissionRedirectMixin, CreateView):
     template_name = "create.html"
     success_url = reverse_lazy("reservas:reserva_list")
 
-    def form_valid(self, form):
-        form.instance.empleado = self.request.user
-        if not form.instance.precio_venta and form.instance.paquete:
-            form.instance.precio_venta = form.instance.paquete.precio_final
-            messages.success(self.request, "Reserva creada correctamente.")
-        return super().form_valid(form)
-
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx.update(
-            {
-                "page_title": "Nueva Reserva",
-                "submit_label": "Crear reserva",
-                "cancel_url": reverse_lazy("reservas:reserva_list"),
-            }
-        )
+        ctx.update({
+            "page_title": "Nueva Reserva",
+            "submit_label": "Crear reserva",
+            "cancel_url": reverse_lazy("reservas:reserva_list"),
+        })
         return ctx
 
-    def form_valid(self, form):
+    def form_valid(self, form):        
+        form.instance.empleado = self.request.user
+
+        
+        if not form.instance.precio_venta and form.instance.paquete:
+            form.instance.precio_venta = form.instance.paquete.precio_final
+
         messages.success(self.request, "Reserva creada correctamente.")
         return super().form_valid(form)
+
 
 
 class ReservaUpdateView(PermissionRedirectMixin, UpdateView):
@@ -714,11 +722,151 @@ class InteraccionDeleteView(PermissionRedirectMixin, DeleteView):
 
 
 
+User = get_user_model()
+
+# Permisos organizados por módulo para la UI de roles
+PERM_TABS = OrderedDict([
+    ("clientes", ("Clientes", {"app": "core", "models": ["cliente"]})),
+    ("paquetes", ("Paquetes", {"app": "core", "models": ["paquete"]})),
+    ("productos", ("Productos", {"app": "core", "models": ["producto"]})),
+    ("proveedores", ("Proveedores", {"app": "core", "models": ["proveedor"]})),
+    ("destinos", ("Destinos", {"app": "core", "models": ["destino"]})),
+    ("reservas", ("Reservas", {"app": "core", "models": ["reserva"]})),
+    ("interacciones", ("Interacciones", {"app": "core", "models": ["interaccion"]})),
+    ("metodopago", ("Métodos de pago", {"app": "core", "models": ["metodopago"]})),
+    ("colaboradores", ("Colaboradores", {"app": "core", "models": ["empleado"]})),
+    ("roles", ("Roles", {"app": "auth", "models": ["group"]})),
+])
 
 
+def build_perm_tabs():
+    tabs = OrderedDict()
+    for key, (label, spec) in PERM_TABS.items():
+        perms = (
+            Permission.objects
+            .select_related("content_type")
+            .filter(
+                content_type__app_label=spec["app"],
+                content_type__model__in=spec["models"],
+            )
+            .order_by("content_type__model", "codename")
+        )
+        tabs[key] = {"label": label, "perms": perms}
+    return tabs
 
 
+# ===== ROLES (Group + Permission) =====
+
+class RolListView(PermissionRedirectMixin, ListView):
+    required_perm = "auth.view_group"
+    model = Group
+    template_name = "roles/rol_list.html"
+    context_object_name = "roles"
+    paginate_by = 20
+
+class RolCreateView(PermissionRedirectMixin, CreateView):
+    required_perm = "auth.add_group"
+    model = Group
+    form_class = RolForm
+    template_name = "roles/rol_update.html"
+    success_url = reverse_lazy("roles:rol_list")
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx["page_title"] = "Nuevo Rol"
+        ctx["submit_label"] = "Crear rol"
+        ctx["cancel_url"] = reverse_lazy("roles:rol_list")
+        ctx["perm_tabs"] = build_perm_tabs()
+        ctx["selected_perm_ids"] = set(
+            map(int, self.request.POST.getlist("permissions"))
+        ) if self.request.method == "POST" else set()
+        return ctx
+
+class RolUpdateView(PermissionRedirectMixin, UpdateView):
+    required_perm = "auth.change_group"
+    model = Group
+    form_class = RolForm
+    template_name = "roles/rol_update.html"
+    success_url = reverse_lazy("roles:rol_list")
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx["page_title"] = "Editar Rol"
+        ctx["submit_label"] = "Guardar cambios"
+        ctx["cancel_url"] = reverse_lazy("roles:rol_list")
+        ctx["perm_tabs"] = build_perm_tabs()
+        selected_ids = set(
+            self.object.permissions.values_list("id", flat=True)
+        )
+        if self.request.method == "POST":
+            selected_ids = set(map(int, self.request.POST.getlist("permissions")))
+        ctx["selected_perm_ids"] = selected_ids
+        return ctx
+
+class RolDeleteView(PermissionRedirectMixin, DeleteView):
+    required_perm = "auth.delete_group"
+    model = Group
+    success_url = reverse_lazy("roles:rol_list")
+
+    def get(self, request, *args, **kwargs):
+        return self.delete(request, *args, **kwargs)
+
+    def delete(self, request, *args, **kwargs):
+        obj = self.get_object()
+        messages.success(request, f"Rol '{obj.name}' eliminado.")
+        return super().delete(request, *args, **kwargs)
 
 
-class AccessDeniedView(TemplateView):
-    template_name = "errors/403.html"
+# ===== COLABORADORES (Empleado) =====
+
+class EmpleadoListView(PermissionRedirectMixin, ListView):
+    required_perm = "core.view_empleado"  # si no existe, te digo abajo cómo arreglarlo
+    model = User
+    template_name = "colaboradores/empleado_list.html"
+    context_object_name = "empleados"
+    paginate_by = 20
+
+class EmpleadoCreateView(PermissionRedirectMixin, CreateView):
+    required_perm = "core.add_empleado"
+    model = User
+    form_class = EmpleadoCreateForm
+    template_name = "create.html"
+    success_url = reverse_lazy("colaboradores:empleado_list")
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx.update({
+            "page_title": "Nuevo Colaborador",
+            "submit_label": "Crear colaborador",
+            "cancel_url": reverse_lazy("colaboradores:empleado_list"),
+        })
+        return ctx
+
+class EmpleadoUpdateView(PermissionRedirectMixin, UpdateView):
+    required_perm = "core.change_empleado"
+    model = User
+    form_class = EmpleadoUpdateForm
+    template_name = "update.html"
+    success_url = reverse_lazy("colaboradores:empleado_list")
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx.update({
+            "page_title": "Editar Colaborador",
+            "submit_label": "Guardar cambios",
+            "cancel_url": reverse_lazy("colaboradores:empleado_list"),
+        })
+        return ctx
+
+class EmpleadoDeleteView(PermissionRedirectMixin, DeleteView):
+    required_perm = "core.delete_empleado"
+    model = User
+    success_url = reverse_lazy("colaboradores:empleado_list")
+
+    def get(self, request, *args, **kwargs):
+        return self.delete(request, *args, **kwargs)
+
+    def delete(self, request, *args, **kwargs):
+        obj = self.get_object()
+        messages.success(request, f"Colaborador '{getattr(obj,'email', obj.pk)}' eliminado.")
+        return super().delete(request, *args, **kwargs)

@@ -55,7 +55,7 @@
         <a class="nav-link" data-widget="pushmenu" href="#" role="button"><i class="fas fa-bars"></i></a>
       </li>
       <li class="nav-item d-none d-sm-inline-block">
-        <a href="{% url 'index' %}" class="nav-link {% if request.resolver_match.url_name == 'index' %}active{% endif %}">Inicio</a>
+        <a href="{% url 'home' %}" class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}">Inicio</a>
       </li>
       <li class="nav-item dropdown d-none d-sm-inline-block">
         <a class="nav-link dropdown-toggle {% if request.resolver_match.namespace == 'destinos' or request.resolver_match.namespace == 'proveedores' or request.resolver_match.namespace == 'productos' or request.resolver_match.namespace == 'paquetes' or request.resolver_match.namespace == 'metodopago' %}active{% endif %}" href="#" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
@@ -87,23 +87,55 @@
         </div>
       </li>
     </ul>
+    <ul class="navbar-nav ml-auto">
+      <li class="nav-item dropdown">
+        <a class="nav-link" href="#" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+          <i class="fas fa-user-circle"></i>
+          <span class="d-none d-sm-inline ml-1">{{ request.user.get_short_name|default:request.user.email }}</span>
+        </a>
+        <div class="dropdown-menu dropdown-menu-right">
+          <form method="post" action="{% url 'logout' %}" style="display:inline;">
+            {% csrf_token %}
+            <button type="submit" class="dropdown-item">
+              <i class="fas fa-sign-out-alt mr-2"></i>
+              Cerrar sesión
+            </button>
+          </form>
+          </a>
+        </div>
+      </li>
+    </ul>
   </nav>
 
   <!-- Sidebar -->
   <aside class="main-sidebar sidebar-dark-primary elevation-4">
-    <a href="{% url 'index' %}" class="brand-link">
+    <a href="{% url 'home' %}" class="brand-link">
       <img src="{% static 'img/AdminLTELogo.png' %}" alt="Logo" class="brand-image img-circle elevation-3" style="opacity:.8">
-      <span class="brand-text font-weight-light">GabosTours</span>
+      <!--<span class="brand-text font-weight-light">GabosTours</span>-->
     </a>
 
     <div class="sidebar">
       <nav class="mt-2">
         <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu">
           <li class="nav-item">
-            <a href="{% url 'index' %}" class="nav-link {% if request.resolver_match.url_name == 'index' %}active{% endif %}">
+          <a href="{% url 'home' %}" class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}">
               <i class="nav-icon fas fa-tachometer-alt"></i><p>Dashboard</p>
             </a>
           </li>
+          {% if perms.auth.view_group %}
+          <li class="nav-item">
+            <a href="{% url 'roles:rol_list' %}" class="nav-link {% if request.resolver_match.namespace == 'roles' %}active{% endif %}">
+              <i class="nav-icon fas fa-user-shield"></i><p>Roles</p>
+            </a>
+          </li>
+          {% endif %}
+          {% if perms.core.view_empleado %}
+          <li class="nav-item">
+            <a href="{% url 'colaboradores:empleado_list' %}" class="nav-link {% if request.resolver_match.namespace == 'colaboradores' %}active{% endif %}">
+              <i class="nav-icon fas fa-users-cog"></i><p>Colaboradores</p>
+            </a>
+          </li>
+          {% endif %}
           {% with ns=request.resolver_match.namespace %}
           <li class="nav-item has-treeview {% if ns == 'destinos' or ns == 'proveedores' or ns == 'productos' or ns == 'paquetes' or ns == 'metodopago' %}menu-open{% endif %}">
             <a href="#" class="nav-link {% if ns == 'destinos' or ns == 'proveedores' or ns == 'productos' or ns == 'paquetes' or ns == 'metodopago' %}active{% endif %}">

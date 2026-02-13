@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Colaboradores — GabosTours{% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="card-header">
+    {% url 'colaboradores:empleado_create' as add_url %}
+    {% include "includes/card_header.html" with title="Colaboradores" add_url=add_url can_add=perms.core.add_empleado btn_class="btn btn-primary" %}
+  </div>
+
+  <div class="card-body">
+    <table class="table table-striped table-bordered">
+      <thead>
+        <tr>
+          <th>Correo</th>
+          <th>Activo</th>
+          <th>Roles</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for u in empleados %}
+        <tr>
+          <td>{{ u.email }}</td>
+          <td>{{ u.is_active|yesno:"Sí,No" }}</td>
+          <td>{% for g in u.groups.all %} <span class="badge bg-secondary">{{ g.name }}</span> {% empty %}—{% endfor %}</td>
+          <td>
+            {% if perms.core.change_empleado %}
+              <a class="btn btn-sm btn-info" href="{% url 'colaboradores:empleado_update' u.pk %}"><i class="fas fa-edit"></i></a>
+            {% endif %}
+            {% if perms.core.delete_empleado %}
+              <a class="btn btn-sm btn-danger" href="{% url 'colaboradores:empleado_delete' u.pk %}"><i class="fas fa-trash"></i></a>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
