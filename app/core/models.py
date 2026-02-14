@@ -4,6 +4,8 @@ from django.contrib.auth.models import PermissionsMixin
 from django.core.validators import RegexValidator
 from django.db import models
 from django.utils import timezone
+from django.core.validators import RegexValidator, MinValueValidator, MaxValueValidator
+
 
 
 class Cliente(models.Model):
@@ -193,7 +195,8 @@ class Reserva(models.Model):
     empleado = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="reservas_atendidas"
     )
-    fecha_reserva = models.DateTimeField(auto_now_add=True)
+    fecha_reserva = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de reserva")
+    fecha_viaje = models.DateField(blank=True, null=True, verbose_name="Fecha de viaje")
     precio_venta = models.DecimalField(max_digits=10, decimal_places=2)
     metodo_pago = models.ForeignKey(MetodoPago, on_delete=models.SET_NULL, null=True)
 
@@ -211,6 +214,25 @@ class Reserva(models.Model):
 
     def __str__(self):
         return f"Reserva {self.id} - {self.cliente.nombre} - {self.paquete.nombre}"
+
+class Comentario(models.Model):
+    paquete = models.ForeignKey(Paquete, on_delete=models.CASCADE, related_name="comentarios")
+    autor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="comentarios")
+    texto = models.TextField()
+    calificacion = models.PositiveSmallIntegerField(
+        validators=[MinValueValidator(1), MaxValueValidator(5)]
+    )
+    creado_en = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Comentario"
+        verbose_name_plural = "Comentarios"
+        ordering = ["-creado_en"]
+
+    def __str__(self):
+        return f"{self.paquete.nombre} - {self.autor} ({self.calificacion}/5)"
+
+
 
 
 class TipoInteraccion(models.TextChoices):

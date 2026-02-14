@@ -13,11 +13,62 @@
 
   <div class="card-body">
     <form method="get" class="mb-4">
-      <div class="input-group">
-        <input type="text" name="q" class="form-control" placeholder="Buscar por cliente, paquete, empleado o estado..." value="{{ request.GET.q }}">
-        <button type="submit" class="btn btn-outline-secondary">
-          <i class="fas fa-search"></i> Buscar
-        </button>
+      <div class="row">
+        <div class="col-md-3 mb-3">
+          <label class="form-label text-muted small mb-1">Buscar</label>
+          <input type="text" name="q" class="form-control" placeholder="Cliente, paquete, empleado o estado" value="{{ request.GET.q }}">
+        </div>
+
+        <div class="col-md-2 mb-3">
+          <label class="form-label text-muted small mb-1">Fecha desde</label>
+          <input type="date" name="fecha_desde" class="form-control" value="{{ request.GET.fecha_desde }}">
+        </div>
+
+        <div class="col-md-2 mb-3">
+          <label class="form-label text-muted small mb-1">Fecha hasta</label>
+          <input type="date" name="fecha_hasta" class="form-control" value="{{ request.GET.fecha_hasta }}">
+        </div>
+
+        <div class="col-md-2 mb-3">
+          <label class="form-label text-muted small mb-1">Filtrar por</label>
+          <select name="fecha_tipo" class="form-control">
+            <option value="viaje" {% if request.GET.fecha_tipo == "viaje" or not request.GET.fecha_tipo %}selected{% endif %}>Fecha de viaje</option>
+            <option value="creada" {% if request.GET.fecha_tipo == "creada" %}selected{% endif %}>Fecha creada</option>
+          </select>
+        </div>
+
+        <div class="col-md-3 mb-3">
+          <label class="form-label text-muted small mb-1">Destino</label>
+          <select name="destino" class="form-control">
+            <option value="">Todos</option>
+            {% for dest in destinos %}
+              <option value="{{ dest.id }}" {% if request.GET.destino == dest.id|stringformat:"s" %}selected{% endif %}>
+                {{ dest.nombre }} ({{ dest.pais }})
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        {% if can_filter_colaborador %}
+        <div class="col-md-2 mb-3">
+          <label class="form-label text-muted small mb-1">Colaborador</label>
+          <select name="empleado" class="form-control">
+            <option value="">Todos</option>
+            {% for colab in colaboradores %}
+              <option value="{{ colab.id }}" {% if request.GET.empleado == colab.id|stringformat:"s" %}selected{% endif %}>
+                {{ colab.nombre|default:colab.email }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+        {% endif %}
+
+        <div class="col-12 d-flex align-items-end gap-2">
+          <button type="submit" class="btn btn-primary mr-2">
+            <i class="fas fa-filter"></i> Filtrar
+          </button>
+          <a href="{% url 'reservas:reserva_list' %}" class="btn btn-outline-secondary">Limpiar</a>
+        </div>
       </div>
     </form>
 
@@ -26,10 +77,12 @@
         <tr>
           <th>Cliente</th>
           <th>Paquete</th>
+          <th>Destino(s)</th>
           <th>Empleado</th>
           <th>Método de pago</th>
           <th>Precio venta</th>
           <th>Estado</th>
+          <th>Fecha de viaje</th>
           <th>Creada</th>
           <th style="width:120px;">Acciones</th>
         </tr>
@@ -39,10 +92,22 @@
         <tr>
           <td>{{ r.cliente.nombre }}</td>
           <td>{{ r.paquete.nombre }}</td>
+          <td>
+            {% with destinos=r.paquete.productos.all %}
+              {% if destinos %}
+                {% for prod in destinos %}
+                  <span class="badge badge-light text-muted mr-1 mb-1">{{ prod.destino.nombre }}</span>
+                {% endfor %}
+              {% else %}
+                <span class="text-muted">—</span>
+              {% endif %}
+            {% endwith %}
+          </td>
           <td>{{ r.empleado.nombre }}</td>
           <td>{{ r.metodo_pago.nombre|default:"—" }}</td>
           <td>${{ r.precio_venta }}</td>
           <td>{{ r.estado }}</td>
+          <td>{{ r.fecha_viaje|date:"d/m/Y"|default:"—" }}</td>
           <td>{{ r.fecha_reserva|date:"d/m/Y H:i" }}</td>
           <td>
             {% if perms.core.change_reserva %}
@@ -65,11 +130,11 @@
     <nav aria-label="Paginación">
       <ul class="pagination justify-content-center">
         {% if page_obj.has_previous %}
-        <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">Anterior</a></li>
+        <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.fecha_desde %}&fecha_desde={{ request.GET.fecha_desde }}{% endif %}{% if request.GET.fecha_hasta %}&fecha_hasta={{ request.GET.fecha_hasta }}{% endif %}{% if request.GET.fecha_tipo %}&fecha_tipo={{ request.GET.fecha_tipo }}{% endif %}{% if request.GET.destino %}&destino={{ request.GET.destino }}{% endif %}{% if request.GET.empleado %}&empleado={{ request.GET.empleado }}{% endif %}">Anterior</a></li>
         {% endif %}
         <li class="page-item active"><span class="page-link">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span></li>
         {% if page_obj.has_next %}
-        <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">Siguiente</a></li>
+        <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.fecha_desde %}&fecha_desde={{ request.GET.fecha_desde }}{% endif %}{% if request.GET.fecha_hasta %}&fecha_hasta={{ request.GET.fecha_hasta }}{% endif %}{% if request.GET.fecha_tipo %}&fecha_tipo={{ request.GET.fecha_tipo }}{% endif %}{% if request.GET.destino %}&destino={{ request.GET.destino }}{% endif %}{% if request.GET.empleado %}&empleado={{ request.GET.empleado }}{% endif %}">Siguiente</a></li>
         {% endif %}
       </ul>
     </nav>

@@ -21,6 +21,7 @@ from .models import (
     Producto,
     Proveedor,
     Reserva,
+    Comentario,
 )
 
 from django.contrib.auth.models import Group, Permission
@@ -172,13 +173,22 @@ class MetodoPagoForm(forms.ModelForm):
 
 
 class ReservaForm(forms.ModelForm):
+    destinos = forms.CharField(
+        label="Destino(s)",
+        required=False,
+        disabled=True,
+        help_text="Se actualiza según el paquete elegido. Para cambiar destinos, edita los productos del paquete.",
+        widget=forms.TextInput(attrs={"class": "form-control", "readonly": "readonly"}),
+    )
+
     class Meta:
         model = Reserva
-        fields = ["cliente", "paquete", "empleado", "precio_venta", "metodo_pago", "estado"]
+        fields = ["cliente", "paquete", "empleado","fecha_viaje", "precio_venta", "metodo_pago", "estado"]
         labels = {
             "cliente": "Cliente",
             "paquete": "Paquete",
             "empleado": "Empleado",
+            "fecha_viaje": "Fecha de viaje",
             "precio_venta": "Precio de venta",
             "metodo_pago": "Método de pago",
             "estado": "Estado",
@@ -187,10 +197,44 @@ class ReservaForm(forms.ModelForm):
             "cliente": Select(attrs={"class": "form-control"}),
             "paquete": Select(attrs={"class": "form-control"}),
             "empleado": Select(attrs={"class": "form-control"}),
+            "fecha_viaje": forms.DateInput(attrs={"class": "form-control", "type": "date"}),
             "precio_venta": NumberInput(attrs={"class": "form-control", "min": "0", "step": "0.01"}),
             "metodo_pago": Select(attrs={"class": "form-control"}),
             "estado": Select(attrs={"class": "form-control"}),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # Mostrar destinos en las opciones del paquete
+        paquetes = Paquete.objects.prefetch_related("productos__destino").order_by("nombre")
+        paquete_field = self.fields["paquete"]
+        paquete_field.queryset = paquetes
+
+        def label_from_instance(p):
+            destinos = p.productos.all().values_list("destino__nombre", flat=True)
+            destinos_txt = ", ".join(sorted(set(filter(None, destinos))))
+            return f"{p.nombre} — {destinos_txt}" if destinos_txt else p.nombre
+
+        paquete_field.label_from_instance = label_from_instance
+
+        # Campo de solo lectura mostrando los destinos del paquete seleccionado
+        destinos_value = ""
+        paquete_obj = None
+
+        if self.is_bound:
+            paquete_id = self.data.get("paquete") or self.initial.get("paquete")
+            paquete_obj = paquetes.filter(pk=paquete_id).first()
+        else:
+            paquete_obj = getattr(self.instance, "paquete", None) or self.initial.get("paquete")
+            if isinstance(paquete_obj, int):
+                paquete_obj = paquetes.filter(pk=paquete_obj).first()
+
+        if paquete_obj:
+            destinos = paquete_obj.productos.all().values_list("destino__nombre", flat=True)
+            destinos_value = ", ".join(sorted(set(filter(None, destinos))))
+
+        self.fields["destinos"].initial = destinos_value or "—"
 
     def clean_precio_venta(self):
         precio = self.cleaned_data.get("precio_venta")
@@ -276,3 +320,21 @@ class EmpleadoUpdateForm(forms.ModelForm):
             user.save()
             self.save_m2m()
         return user
+
+
+class ComentarioForm(forms.ModelForm):
+    calificacion = forms.TypedChoiceField(
+        choices=[(i, f"{i} ★") for i in range(1, 6)],
+        coerce=int,
+        widget=forms.Select(attrs={"class": "form-control"}),
+        label="Calificación",
+    )
+
+    class Meta:
+        model = Comentario
+        fields = ["calificacion", "texto"]
+        labels = {"texto": "Comentario"}
+        widgets = {
+            "texto": Textarea(attrs={"class": "form-control", "rows": 3, "placeholder": "Escribe tu comentario..."}),
+        }
+    

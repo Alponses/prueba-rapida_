@@ -1,0 +1,47 @@
+<form method="get" style="margin:12px 0; display:flex; gap:10px; flex-wrap:wrap; align-items:end;">
+  <div>
+    <label>Buscar</label><br>
+    <input class="form-control form-control-sm" type="text" name="q" value="{{ request.GET.q|default:'' }}" placeholder="cliente, paquete, estado...">
+  </div>
+
+  <div>
+    <label>Fecha desde</label><br>
+    <input class="form-control form-control-sm" type="date" name="fecha_desde" value="{{ request.GET.fecha_desde|default:'' }}">
+  </div>
+
+  <div>
+    <label>Fecha hasta</label><br>
+    <input class="form-control form-control-sm" type="date" name="fecha_hasta" value="{{ request.GET.fecha_hasta|default:'' }}">
+  </div>
+
+  <div>
+    <label>Destino</label><br>
+    <select class="form-control form-control-sm" name="destino">
+      <option value="">— Todos —</option>
+      {% for d in destinos %}
+        <option value="{{ d.id }}" {% if request.GET.destino == d.id|stringformat:"s" %}selected{% endif %}>
+          {{ d.nombre }}, {{ d.pais }}
+        </option>
+      {% endfor %}
+    </select>
+  </div>
+
+  {% if can_filter_colaborador %}
+    <div>
+      <label>Colaborador</label><br>
+      <select class="form-control form-control-sm" name="empleado">
+        <option value="">— Todos —</option>
+        {% for u in colaboradores %}
+          <option value="{{ u.id }}" {% if request.GET.empleado == u.id|stringformat:"s" %}selected{% endif %}>
+            {{ u.nombre|default:u.email }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+  {% endif %}
+
+  <div>
+    <button class="btn btn-primary btn-sm" type="submit">Filtrar</button>
+    <a class="btn btn-light btn-sm" href="{% url 'reservas:reserva_list' %}">Limpiar</a>
+  </div>
+</form>

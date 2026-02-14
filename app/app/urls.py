@@ -18,6 +18,7 @@ clientes_patterns = ([
 paquetes_patterns = ([
     path("", views.PaqueteListView.as_view(), name="paquete_list"),
     path("nuevo/", views.PaqueteCreateView.as_view(), name="paquete_create"),
+    path("<int:pk>/", views.PaqueteDetailView.as_view(), name="paquete_detail"),
     path("<int:pk>/editar/", views.PaqueteUpdateView.as_view(), name="paquete_update"),
     path("<int:pk>/eliminar/", views.PaqueteDeleteView.as_view(), name="paquete_delete"),
 ], "paquetes")

@@ -11,7 +11,10 @@ from .models import (
     Producto,
     Proveedor,
     Reserva,
+    Comentario,
+
 )
+
 
 
 @admin.register(Cliente)
@@ -76,3 +79,9 @@ class CargoAdmin(admin.ModelAdmin):
 class EmpleadoAdmin(admin.ModelAdmin):
     list_display = ("email", "nombre", "puesto", "is_active", "is_staff")
     search_fields = ("email", "nombre")
+
+@admin.register(Comentario)
+class ComentarioAdmin(admin.ModelAdmin):
+    list_display = ("paquete", "autor", "calificacion", "creado_en")
+    list_filter = ("calificacion", "creado_en")
+    search_fields = ("paquete__nombre", "autor__email", "autor__nombre", "texto")

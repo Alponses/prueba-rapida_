@@ -1,25 +1,28 @@
 # core/views.py
 from collections import OrderedDict
+from datetime import datetime
 
 from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import Group, Permission
-from django.db.models import Q
+from django.db.models import Q, Avg
 from django.shortcuts import redirect
 from django.urls import reverse_lazy
 from django.views import View
-from django.views.generic import CreateView, DeleteView, ListView, TemplateView, UpdateView
+from django.views.generic import CreateView, DeleteView, ListView, TemplateView, UpdateView, DetailView
 
 from .mixins import PermissionRedirectMixin
 from .models import (
-    Cliente, Destino, Interaccion, MetodoPago, Paquete, Producto, Proveedor, Reserva
+    Cliente, Destino, Interaccion, MetodoPago, Paquete, Producto, Proveedor, Reserva, Comentario
 )
 from .forms import (
     ClienteForm, DestinoForm, InteraccionForm, MetodoPagoForm,
     PaqueteForm, ProductoForm, ProveedorForm, ReservaForm,
-    RolForm, EmpleadoCreateForm, EmpleadoUpdateForm
+    RolForm, EmpleadoCreateForm, EmpleadoUpdateForm, ComentarioForm
 )
+def is_admin_user(user) -> bool:
+    return bool(user.is_superuser or getattr(user, "is_admin", False))
 
 
 class RootRedirectView(View):
@@ -157,7 +160,15 @@ class PaqueteListView(PermissionRedirectMixin,ListView):
     paginate_by = 10
 
     def get_queryset(self):
-        qs = super().get_queryset().prefetch_related("productos__proveedor", "productos__destino")
+        qs = (
+            super()
+            .get_queryset()
+            .prefetch_related(
+                "productos__proveedor",
+                "productos__destino",
+                "comentarios__autor",
+            )
+        )
         q = self.request.GET.get("q")
         if q:
             qs = qs.filter(
@@ -232,6 +243,49 @@ class PaqueteDeleteView(PermissionRedirectMixin, DeleteView):
         response = super().delete(request, *args, **kwargs)
         messages.success(request, f"Paquete {nombre} eliminado correctamente.")
         return response
+
+class PaqueteDetailView(PermissionRedirectMixin, DetailView):
+    required_perm = "core.view_paquete"
+    model = Paquete
+    template_name = "paquetes/paquete_detail.html"
+    context_object_name = "paquete"
+
+    def get_queryset(self):
+        return (
+            super()
+            .get_queryset()
+            .prefetch_related(
+                "productos__proveedor",
+                "productos__destino",
+                "comentarios__autor",
+            )
+        )
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        form = kwargs.get("comentario_form") or ComentarioForm()
+        ctx["comentario_form"] = form
+        stats = self.object.comentarios.aggregate(avg=Avg("calificacion"))
+        ctx["rating_avg"] = stats["avg"]
+        ctx["rating_count"] = self.object.comentarios.count()
+        return ctx
+
+    def post(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        form = ComentarioForm(request.POST)
+
+        if form.is_valid():
+            c = form.save(commit=False)
+            c.paquete = self.object
+            c.autor = request.user
+            c.save()
+            messages.success(request, "Comentario agregado.")
+            return redirect("paquetes:paquete_detail", pk=self.object.pk)
+
+        # si falla validación, render con errores
+        return self.render_to_response(self.get_context_data(comentario_form=form))
+
+
 
 
 # Productos
@@ -562,7 +616,13 @@ class ReservaListView(PermissionRedirectMixin, ListView):
             super()
             .get_queryset()
             .select_related("cliente", "paquete", "empleado", "metodo_pago")
+            .prefetch_related("paquete__productos__destino")
         )
+
+        # Control por rol: admin ve todo, colaborador solo lo asignado
+        if not is_admin_user(self.request.user):
+            qs = qs.filter(empleado=self.request.user)
+
         q = self.request.GET.get("q")
         if q:
             qs = qs.filter(
@@ -571,7 +631,54 @@ class ReservaListView(PermissionRedirectMixin, ListView):
                 | Q(empleado__nombre__icontains=q)
                 | Q(estado__icontains=q)
             )
-        return qs
+
+        destino_id = self.request.GET.get("destino")
+        if destino_id:
+            qs = qs.filter(paquete__productos__destino_id=destino_id)
+
+        empleado_id = self.request.GET.get("empleado")
+        if empleado_id and is_admin_user(self.request.user):
+            qs = qs.filter(empleado_id=empleado_id)
+
+        def _parse_date(val: str):
+            if not val:
+                return None
+            for fmt in ("%Y-%m-%d", "%d/%m/%Y"):
+                try:
+                    return datetime.strptime(val, fmt).date()
+                except ValueError:
+                    continue
+            return None
+
+        fecha_tipo = self.request.GET.get("fecha_tipo") or "viaje"
+
+        fecha_desde = _parse_date(self.request.GET.get("fecha_desde"))
+        fecha_hasta = _parse_date(self.request.GET.get("fecha_hasta"))
+
+        if fecha_desde:
+            if fecha_tipo == "creada":
+                qs = qs.filter(fecha_reserva__date__gte=fecha_desde)
+            else:
+                qs = qs.filter(fecha_viaje__gte=fecha_desde)
+
+        if fecha_hasta:
+            if fecha_tipo == "creada":
+                qs = qs.filter(fecha_reserva__date__lte=fecha_hasta)
+            else:
+                qs = qs.filter(fecha_viaje__lte=fecha_hasta)
+
+        return qs.distinct()
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx["destinos"] = Destino.objects.order_by("pais", "nombre")
+        ctx["can_filter_colaborador"] = is_admin_user(self.request.user)
+        if ctx["can_filter_colaborador"]:
+            User = get_user_model()
+            ctx["colaboradores"] = User.objects.order_by("nombre", "email")
+        return ctx
+
+        
 
 
 class ReservaCreateView(PermissionRedirectMixin, CreateView):
@@ -590,15 +697,14 @@ class ReservaCreateView(PermissionRedirectMixin, CreateView):
         })
         return ctx
 
-    def form_valid(self, form):        
-        form.instance.empleado = self.request.user
-
-        
+    def form_valid(self, form):
+        if not is_admin_user(self.request.user):
+            form.instance.empleado = self.request.user
         if not form.instance.precio_venta and form.instance.paquete:
             form.instance.precio_venta = form.instance.paquete.precio_final
-
         messages.success(self.request, "Reserva creada correctamente.")
         return super().form_valid(form)
+
 
 
 
@@ -736,6 +842,8 @@ PERM_TABS = OrderedDict([
     ("metodopago", ("Métodos de pago", {"app": "core", "models": ["metodopago"]})),
     ("colaboradores", ("Colaboradores", {"app": "core", "models": ["empleado"]})),
     ("roles", ("Roles", {"app": "auth", "models": ["group"]})),
+    ("comentarios", ("Comentarios", {"app": "core", "models": ["comentario"]})),
+
 ])
 
 

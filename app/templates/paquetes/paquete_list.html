@@ -35,7 +35,10 @@
             <tbody>
                 {% for p in paquetes %}
                 <tr>
-                    <td>{{ p.nombre }}</td>
+                    <td>
+                        <a href="{% url 'paquetes:paquete_detail' p.pk %}">{{ p.nombre }}</a>
+                        {% if p.comentarios.count %}<span class="badge badge-light ml-1">{{ p.comentarios.count }} com.</span>{% endif %}
+                    </td>
                     <td>
                         {% for producto in p.productos.all %}
                             <span class="badge badge-info">{{ producto.nombre }}</span>
