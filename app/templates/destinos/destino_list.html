@@ -21,37 +21,39 @@
       </div>
     </form>
 
-    <table id="tabla-destinos" class="table table-striped table-bordered">
-      <thead>
-        <tr>
-          <th>Destino</th>
-          <th>País</th>
-          <th>Descripción</th>
-          <th style="width:120px;">Acciones</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for d in destinos %}
-        <tr>
-          <td>{{ d.nombre }}</td>
-          <td>{{ d.pais }}</td>
-          <td>{{ d.descripcion|default:"—" }}</td>
-          <td>
-            {% if perms.core.change_destino %}
-              <a href="{% url 'destinos:destino_update' d.pk %}" class="btn btn-sm btn-info" title="Editar">
-                <i class="fas fa-edit"></i>
-              </a>
-            {% endif %}
-            {% if perms.core.delete_destino %}
-              <a href="{% url 'destinos:destino_delete' d.pk %}" class="btn btn-sm btn-danger" title="Eliminar">
-                <i class="fas fa-trash"></i>
-              </a>
-            {% endif %}
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+    <div class="table-responsive">
+      <table class="table table-striped table-hover align-middle" data-datatable data-empty="Sin destinos registrados.">
+        <thead>
+          <tr>
+            <th>Destino</th>
+            <th>País</th>
+            <th>Descripción</th>
+            <th style="width:120px;">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for d in destinos %}
+          <tr>
+            <td>{{ d.nombre }}</td>
+            <td>{{ d.pais }}</td>
+            <td>{{ d.descripcion|default:"—" }}</td>
+            <td>
+              {% if perms.core.change_destino %}
+                <a href="{% url 'destinos:destino_update' d.pk %}" class="btn btn-sm btn-info" title="Editar">
+                  <i class="fas fa-edit"></i>
+                </a>
+              {% endif %}
+              {% if perms.core.delete_destino %}
+                <a href="{% url 'destinos:destino_delete' d.pk %}" class="btn btn-sm btn-danger" title="Eliminar">
+                  <i class="fas fa-trash"></i>
+                </a>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
 
     {% if is_paginated %}
     <nav aria-label="Paginación">
@@ -68,19 +70,4 @@
     {% endif %}
   </div>
 </div>
-{% endblock %}
-
-{% block scripts %}
-<script>
-  $(function () {
-    $('#tabla-destinos').DataTable({
-      language: {
-        url: 'https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json',
-        emptyTable: 'Sin destinos registrados.'
-      },
-      pageLength: 10,
-      lengthChange: false
-    });
-  });
-</script>
 {% endblock %}

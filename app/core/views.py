@@ -6,7 +6,7 @@ from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import Group, Permission
-from django.db.models import Q, Avg
+from django.db.models import Q, Avg, Count
 from django.shortcuts import redirect
 from django.urls import reverse_lazy
 from django.views import View
@@ -167,6 +167,9 @@ class PaqueteListView(PermissionRedirectMixin,ListView):
                 "productos__proveedor",
                 "productos__destino",
                 "comentarios__autor",
+            )
+            .annotate(
+                comentarios_count=Count("comentarios", distinct=True),
             )
         )
         q = self.request.GET.get("q")
@@ -872,6 +875,15 @@ class RolListView(PermissionRedirectMixin, ListView):
     context_object_name = "roles"
     paginate_by = 20
 
+    def get_queryset(self):
+        return (
+            super()
+            .get_queryset()
+            .prefetch_related("permissions")
+            .annotate(permissions_count=Count("permissions", distinct=True))
+            .order_by("name")
+        )
+
 class RolCreateView(PermissionRedirectMixin, CreateView):
     required_perm = "auth.add_group"
     model = Group
@@ -933,6 +945,9 @@ class EmpleadoListView(PermissionRedirectMixin, ListView):
     template_name = "colaboradores/empleado_list.html"
     context_object_name = "empleados"
     paginate_by = 20
+
+    def get_queryset(self):
+        return User.objects.prefetch_related("groups").order_by("email")
 
 class EmpleadoCreateView(PermissionRedirectMixin, CreateView):
     required_perm = "core.add_empleado"

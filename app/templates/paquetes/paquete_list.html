@@ -22,54 +22,58 @@
             </div>
         </form>
 
-        <table id="tabla-paquetes" class="table table-striped table-bordered">
-            <thead>
-                <tr>
-                    <th>Nombre</th>
-                    <th>Productos</th>
-                    <th>Precio Final</th>
-                    <th>Activo</th>
-                    <th>Acciones</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for p in paquetes %}
-                <tr>
-                    <td>
-                        <a href="{% url 'paquetes:paquete_detail' p.pk %}">{{ p.nombre }}</a>
-                        {% if p.comentarios.count %}<span class="badge badge-light ml-1">{{ p.comentarios.count }} com.</span>{% endif %}
-                    </td>
-                    <td>
-                        {% for producto in p.productos.all %}
-                            <span class="badge badge-info">{{ producto.nombre }}</span>
-                        {% empty %}
-                            <span class="text-muted">No hay productos</span>
-                        {% endfor %}
-                    </td>
-                    <td>${{ p.precio_final }}</td>
-                    <td>
-                        {% if p.activo %}
-                            <span class="badge badge-success">Activo</span>
-                        {% else %}
-                            <span class="badge badge-secondary">Inactivo</span>
-                        {% endif %}
-                    </td>
-                    <td class="text-nowrap">
-                        {% if perms.core.change_paquete %}
-                        <a href="{% url 'paquetes:paquete_update' p.pk %}" class="btn btn-sm btn-info js-open-modal" data-title="Editar paquete">
-                            <i class="fas fa-edit"></i>
-                        </a>
-                        {% endif %}
-                        {% if perms.core.delete_paquete %}
-                        <a href="{% url 'paquetes:paquete_delete' p.pk %}" class="btn btn-sm btn-danger">
-                            <i class="fas fa-trash"></i>
-                        </a>
-                        {% endif %}
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        <div class="table-responsive">
+          <table class="table table-striped table-hover align-middle" data-datatable data-empty="Sin paquetes registrados.">
+              <thead>
+                  <tr>
+                      <th>Nombre</th>
+                      <th>Productos</th>
+                      <th>Precio Final</th>
+                      <th>Activo</th>
+                      <th>Acciones</th>
+                  </tr>
+              </thead>
+              <tbody>
+                  {% for p in paquetes %}
+                  <tr>
+                      <td>
+                          <a href="{% url 'paquetes:paquete_detail' p.pk %}">{{ p.nombre }}</a>
+                          {% if p.comentarios_count %}
+                            <span class="badge badge-light ml-1">{{ p.comentarios_count }} com.</span>
+                          {% endif %}
+                      </td>
+                      <td>
+                          {% for producto in p.productos.all %}
+                              <span class="badge badge-info">{{ producto.nombre }}</span>
+                          {% empty %}
+                              <span class="text-muted">No hay productos</span>
+                          {% endfor %}
+                      </td>
+                      <td>${{ p.precio_final }}</td>
+                      <td>
+                          {% if p.activo %}
+                              <span class="badge badge-success">Activo</span>
+                          {% else %}
+                              <span class="badge badge-secondary">Inactivo</span>
+                          {% endif %}
+                      </td>
+                      <td class="text-nowrap">
+                          {% if perms.core.change_paquete %}
+                          <a href="{% url 'paquetes:paquete_update' p.pk %}" class="btn btn-sm btn-info js-open-modal" data-title="Editar paquete">
+                              <i class="fas fa-edit"></i>
+                          </a>
+                          {% endif %}
+                          {% if perms.core.delete_paquete %}
+                          <a href="{% url 'paquetes:paquete_delete' p.pk %}" class="btn btn-sm btn-danger">
+                              <i class="fas fa-trash"></i>
+                          </a>
+                          {% endif %}
+                      </td>
+                  </tr>
+                  {% endfor %}
+              </tbody>
+          </table>
+        </div>
 
         {% if is_paginated %}
         <nav aria-label="Paginación">
@@ -94,18 +98,4 @@
         {% endif %}
     </div>
 </div>
-{% endblock %}
-
-{% block scripts %}
-<script>
-  $(function () {
-    $('#tabla-paquetes').DataTable({
-      language: {
-        url: 'https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json',
-        emptyTable: 'Sin paquetes'
-      },
-      pageLength: 10, lengthChange: false
-    });
-  });
-</script>
 {% endblock %}

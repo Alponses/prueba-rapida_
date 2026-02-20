@@ -1,0 +1,231 @@
+@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700&display=swap");
+
+:root {
+  --brand-primary: #2563eb;
+  --brand-secondary: #0ea5e9;
+  --brand-dark: #0f172a;
+  --brand-muted: #64748b;
+  --brand-surface: #f5f7fb;
+  --card-radius: 12px;
+}
+
+* {
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  font-family: "Manrope", "Segoe UI", sans-serif;
+  background: var(--brand-surface);
+}
+
+.wrapper {
+  background: var(--brand-surface);
+}
+
+.main-header.navbar {
+  box-shadow: 0 4px 18px rgba(15, 23, 42, 0.08);
+}
+
+.sidebar-dark-primary {
+  background: linear-gradient(180deg, #0f172a 0%, #111827 50%, #0b1220 100%);
+}
+
+.sidebar .nav-link {
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.sidebar .nav-link.active {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.brand-link {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.brand-logo {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--brand-primary), var(--brand-secondary));
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: -0.25px;
+  box-shadow: 0 8px 18px rgba(37, 99, 235, 0.35);
+}
+
+.brand-text {
+  font-weight: 700;
+  letter-spacing: -0.2px;
+  color: #e5e7eb;
+}
+
+.content-wrapper {
+  background: transparent;
+}
+
+.content-header {
+  border: 0;
+}
+
+.card {
+  border: 0;
+  border-radius: var(--card-radius);
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06);
+}
+
+.card-header {
+  border-bottom: 1px solid #eef0f4;
+  background: #fff;
+  border-top-left-radius: var(--card-radius);
+  border-top-right-radius: var(--card-radius);
+}
+
+.card-body {
+  background: #fff;
+}
+
+.table {
+  margin-bottom: 0;
+}
+
+.table thead th {
+  background: #f8fafc;
+  font-weight: 700;
+  font-size: 0.92rem;
+  color: #0f172a;
+  border-bottom-width: 1px;
+}
+
+.table td {
+  vertical-align: middle;
+  color: #1f2937;
+}
+
+.table-responsive {
+  border-radius: var(--card-radius);
+  box-shadow: inset 0 0 0 1px #eef0f4;
+}
+
+.table .badge {
+  font-weight: 600;
+}
+
+.small-box {
+  border-radius: var(--card-radius);
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.1);
+  overflow: hidden;
+}
+
+.small-box .inner h3 {
+  font-size: 1.35rem;
+}
+
+.small-box-footer {
+  font-weight: 600;
+  letter-spacing: 0.1px;
+}
+
+.module-subnav {
+  display: flex;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  gap: 0.35rem;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+
+.module-subnav .nav-link {
+  white-space: nowrap;
+  color: var(--brand-muted);
+  font-weight: 700;
+  border-radius: 0.55rem;
+  padding: 0.5rem 0.9rem;
+}
+
+.module-subnav .nav-link.active {
+  color: var(--brand-dark);
+  background: #e2e8f0;
+}
+
+.sortable-grab {
+  cursor: grab;
+}
+
+.sortable-grab:active {
+  cursor: grabbing;
+}
+
+.sort-highlight {
+  background: rgba(15, 23, 42, 0.05);
+  border: 1px dashed #94a3b8;
+  min-height: 60px;
+}
+
+.btn-primary {
+  background: var(--brand-primary);
+  border-color: var(--brand-primary);
+  box-shadow: 0 10px 20px rgba(37, 99, 235, 0.25);
+}
+
+.btn-primary:hover {
+  background: #1d4ed8;
+  border-color: #1d4ed8;
+}
+
+.btn-outline-secondary {
+  color: var(--brand-dark);
+  border-color: #cbd5e1;
+}
+
+.form-control:focus {
+  border-color: var(--brand-secondary);
+  box-shadow: 0 0 0 0.15rem rgba(14, 165, 233, 0.25);
+}
+
+.badge-light {
+  background: #eef2ff;
+  color: #4338ca;
+}
+
+.badge-success {
+  background: #16a34a;
+}
+
+.badge-secondary {
+  background: #94a3b8;
+}
+
+.table-actions .btn {
+  margin-right: 0.35rem;
+}
+
+.alert {
+  border-radius: 10px;
+}
+
+.swal2-popup {
+  border-radius: 12px !important;
+}
+
+footer.main-footer {
+  background: transparent;
+  border-top: 0;
+  color: #94a3b8;
+}
+
+@media (max-width: 991px) {
+  .main-header .navbar-nav .nav-link {
+    padding: 0.5rem 0.65rem;
+  }
+
+  .card-body {
+    padding: 1rem;
+  }
+}
